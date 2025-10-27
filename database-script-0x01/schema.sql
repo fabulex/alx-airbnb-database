@@ -31,6 +31,7 @@ CREATE TABLE "User" (
     role user_role NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_user_email ON "User"(email);
 
 -- STEP 5: Create Property table with BIGSERIAL PK and FK to User.
 -- Rationale: host_id as BIGINT for consistency with User.user_id.
@@ -40,7 +41,7 @@ CREATE TABLE "Property" (
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     location VARCHAR(255) NOT NULL,
-    pricepernight DECIMAL(10,2) NOT NULL,
+    pricepernight DECIMAL(10,2) NOT NULL CHECK (pricepernight > 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -48,8 +49,18 @@ CREATE TABLE "Property" (
 -- STEP 6: Define trigger function and attach to Property for auto-updating 'updated_at'.
 -- Rationale: Simulates MySQL's ON UPDATE CURRENT_TIMESTAMP; ensures audit trail.
 CREATE OR REPLACE FUNCTION update_updated_at_column() RETURNS TRIGGER AS $$
-BEGIN NEW.updated_at = CURRENT_TIMESTAMP; RETURN NEW; END; $$ LANGUAGE plpgsql;
-CREATE TRIGGER update_property_updated_at BEFORE UPDATE ON "Property" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_property_updated_at
+BEFORE UPDATE ON "Property"
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX idx_property_host ON "Property"(host_id);
+CREATE INDEX idx_property_location_price ON "Property"(location, pricepernight);
 
 -- STEP 7: Create Booking table with BIGSERIAL PK, FKs, and date CHECK.
 -- Rationale: CHECK ensures logical dates; RESTRICT prevents cascading deletes.
@@ -66,8 +77,13 @@ CREATE TABLE "Booking" (
 
 -- STEP 8: Add overlap prevention index (unique on confirmed bookings).
 -- Rationale: Blocks exact date overlaps per property; for partial overlaps, upgrade to GIST exclusion (commented).
-CREATE UNIQUE INDEX idx_no_overlap ON "Booking" (property_id, start_date, end_date) WHERE status = 'confirmed';
+CREATE UNIQUE INDEX idx_no_overlap
+    ON "Booking" (property_id, start_date, end_date)
+    WHERE status = 'confirmed';
 -- For advanced partial overlap: CREATE EXTENSION btree_gist; CREATE INDEX idx_overlap_gist ON "Booking" USING GIST (tsrange(start_date, end_date));
+
+CREATE INDEX idx_booking_user_id
+    ON "Booking"(user_id);
 
 -- STEP 9: Create remaining tables (Payment, Review, Message) with BIGSERIAL PKs.
 -- Rationale: CASCADE on Payment for dependent deletes; RESTRICT elsewhere for safety.
@@ -78,7 +94,10 @@ CREATE TABLE "Payment" (
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     payment_method payment_method NOT NULL
 );
+CREATE INDEX idx_payment_booking_id
+    ON "Payment"(booking_id);
 
+--
 CREATE TABLE "Review" (
     review_id BIGSERIAL PRIMARY KEY,
     property_id BIGINT NOT NULL REFERENCES "Property"(property_id) ON DELETE RESTRICT,
@@ -87,7 +106,9 @@ CREATE TABLE "Review" (
     comment TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
+CREATE INDEX idx_review_property_id
+    ON "Review"(property_id);
+--
 CREATE TABLE "Message" (
     message_id BIGSERIAL PRIMARY KEY,
     sender_id BIGINT NOT NULL REFERENCES "User"(user_id) ON DELETE RESTRICT,
@@ -95,7 +116,8 @@ CREATE TABLE "Message" (
     message_body TEXT NOT NULL,
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
+CREATE INDEX idx_message_sent_at
+    ON "Message"(sent_at DESC);
 -- STEP 10: Create performance indexes.
 -- Rationale: Target common queries (e.g., user history, property availability).
 CREATE INDEX idx_user_email ON "User"(email);
