@@ -127,12 +127,3 @@ CREATE INDEX idx_booking_dates_status ON "Booking"(start_date, end_date) WHERE s
 CREATE INDEX idx_payment_booking_id ON "Payment"(booking_id);
 CREATE INDEX idx_review_property_id ON "Review"(property_id);
 CREATE INDEX idx_message_sent_at ON "Message"(sent_at DESC);
-
--- STEP 12: Optimize post-schema (optional; run after data load for stats).
--- Rationale: Ensures efficient queries after initial setup.
--- VACUUM ANALYZE "User", "Property", "Booking", "Payment", "Review", "Message";
-
--- STEP 13: Sample verification queries (uncomment to run post-data).
--- Rationale: Quick integrity checks; totals computed dynamically (no stored total_price per 3NF).
--- SELECT COUNT(*) FROM "Booking" WHERE status = 'confirmed';  -- Expected: 2
--- SELECT b.booking_id, (b.end_date - b.start_date) * p.pricepernight AS total FROM "Booking" b JOIN "Property" p ON b.property_id = p.property_id WHERE b.status = 'confirmed';  -- Expected: 600, 900
