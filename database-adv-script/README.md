@@ -79,4 +79,24 @@ Retrieve all users and all bookings, even if:
 - Correlated: Subquery executes per outer row; use indexes on join fields (e.g., user_id) to optimize.
 - For extensions, try EXISTS with correlated subqueries or scalar subqueries in SELECT.
 
+### 6. Aggregation: Total Bookings per User
+- Description: Uses COUNT and GROUP BY to tally bookings per user (includes users with 0 via LEFT JOIN).
+- Use Case: Identify top users or detect inactive ones.
+- Key Fields: user_id, first_name, last_name, total_bookings.
+- Sorted By: total_bookings DESC.
+
+### 7. Window Function: Rank Properties by Bookings
+- Description: Aggregates bookings per property, then applies RANK() OVER for dense ranking.
+- Use Case: Generate property popularity rankings (ties share ranks).
+- Key Fields: property_id, property_name, total_bookings, booking_rank.
+- Sorted By: booking_rank, then total_bookings DESC.
+
+**Key Points**
+- LEFT JOINs ensure completeness (e.g., users/properties with no bookings show 0/count).
+- Window functions execute after GROUP BY; partition if needed for subgroups.
+- Optimize with indexes on user_id and property_id.
+- Alternatives: Use ROW_NUMBER() for unique ranks or DENSE_RANK() for no gaps.
+
+
+
 * For schema details, refer to the ALX Airbnb repo. Contribute via pull requests!
