@@ -61,3 +61,22 @@ Retrieve all users and all bookings, even if:
 |----------|-------------|------------|-------------|-------------|-----------|
 
 ---
+
+### 4. Non-Correlated Subquery: Properties with Avg Rating >4.0
+- Description: Independently computes average ratings via subquery, then matches property IDs.
+- Use Case: Identify high-rated properties for recommendations.
+- Key Fields: property_id, property_name, description.
+- Sorted By: property_id.
+
+### 5. Correlated Subquery: Users with >3 Bookings
+- Description: Subquery runs per user row, counting bookings tied to each user_id.
+- Use Case: Segment frequent users for loyalty programs.
+- Key Fields: user_id, first_name, last_name, email.
+- Sorted By: user_id.
+
+**Key Points**
+- Non-correlated: Subquery executes once; efficient for independent computations.
+- Correlated: Subquery executes per outer row; use indexes on join fields (e.g., user_id) to optimize.
+- For extensions, try EXISTS with correlated subqueries or scalar subqueries in SELECT.
+
+* For schema details, refer to the ALX Airbnb repo. Contribute via pull requests!
