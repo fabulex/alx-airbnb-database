@@ -16,22 +16,26 @@ GROUP BY
 ORDER BY
     total_bookings DESC;         -- Sort by highest bookings first
 
--- Query 2: Rank properties based on total bookings using ROW_NUMBER() window function.
--- Computes total bookings per property via aggregation, then assigns unique row numbers.
--- ROW_NUMBER() provides sequential ranking without ties; useful for strict ordering in leaderboards.
+-- Query 2: Rank properties based on total bookings using both ROW_NUMBER() and RANK() window functions.
+-- Computes total bookings per property via aggregation, then assigns unique row numbers (ROW_NUMBER) and dense ranks (RANK).
+-- ROW_NUMBER provides sequential ranks (no ties); RANK handles ties by assigning the same rank with gaps.
+-- Useful for comparing ranking behaviors in property leaderboards.
 SELECT
     p.id AS property_id,
     p.name AS property_name,
-    COUNT(b.id) AS total_bookings,  -- Aggregated count per property
-    ROW_NUMBER() OVER (            -- Window function to assign row numbers
-        ORDER BY COUNT(b.id) DESC  -- Order by total bookings descending
-    ) AS booking_rank
+    COUNT(b.id) AS total_bookings,      -- Aggregated count per property
+    ROW_NUMBER() OVER (                 -- Window for unique sequential ranking
+        ORDER BY COUNT(b.id) DESC       -- Order by total bookings descending
+    ) AS row_number_rank,
+    RANK() OVER (                       -- Window for ranking with ties (gaps after)
+        ORDER BY COUNT(b.id) DESC       -- Order by total bookings descending
+    ) AS rank_with_ties
 FROM
-    properties AS p               -- Properties table
+    properties AS p                    -- Properties table
 LEFT JOIN
-    bookings AS b                 -- Bookings table (LEFT for properties with 0 bookings)
-    ON p.id = b.property_id       -- Join condition (assuming bookings has property_id)
+    bookings AS b                      -- Bookings table (LEFT for properties with 0 bookings)
+    ON p.id = b.property_id            -- Join condition (assuming bookings has property_id)
 GROUP BY
-    p.id, p.name                  -- Group by property details
+    p.id, p.name                       -- Group by property details
 ORDER BY
-    booking_rank;                 -- Sort by row number (ascending for 1-based ranking)
+    row_number_rank;                   -- Sort by row number (ascending for 1-based ranking)
