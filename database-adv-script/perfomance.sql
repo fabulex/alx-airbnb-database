@@ -83,7 +83,7 @@ INNER JOIN
 INNER JOIN
     payments AS pay ON b.id = pay.booking_id
 WHERE
-    b.start_date >= CURRENT_DATE - INTERVAL '1 year'
+    b.start_date >= CURRENT_DATE - INTERVAL '1 year' AND b.end_date <= CURRENT_DATE  -- Recent completed bookings
 ORDER BY
     b.start_date;
 
