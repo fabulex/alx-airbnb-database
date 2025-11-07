@@ -87,9 +87,9 @@ Retrieve all users and all bookings, even if:
 
 ### 7. Window Function: Rank Properties by Bookings
 - Description: Aggregates bookings per property, then applies RANK() OVER for dense ranking.
-- Use Case: Generate property popularity rankings (ties share ranks).
-- Key Fields: property_id, property_name, total_bookings, booking_rank.
-- Sorted By: booking_rank, then total_bookings DESC.
+- Use Case: Generate property popularity rankings (leaderboards); compare strict ordering (ROW_NUMBER) vs. tie-handling (RANK).
+- Key Fields: property_id, property_name, total_bookings, row_number_rank, rank_with_ties.
+- Sorted By: row_number_rank.
 
 **Key Points**
 - LEFT JOINs ensure completeness (e.g., users/properties with no bookings show 0/count).
